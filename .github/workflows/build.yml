@@ -1,59 +1,29 @@
-name: Production Release
-
+name: Release-Build
 on:
   push:
-    tags:
-      - 'v*' # v1.0.0 などのタグが打たれたら発動
-
+    tags: ["v*"] # v1.0.0 などのタグをプッシュすると発動
 jobs:
   build-and-release:
     runs-on: windows-latest
     permissions:
-      contents: write # Release作成権限
-
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # 前のタグとの差分を取得するために全履歴を取得
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
-      - name: Build Single-File EXE
-        # リリース用にトリミング（未使用コード削除）を有効にして軽量化
-        run: |
-          dotnet publish src/CardGame/CardGame.csproj `
-            -c Release `
-            -r win-x64 `
-            --self-contained true `
-            -p:PublishSingleFile=true `
-            -p:PublishTrimmed=true `
-            -p:IncludeNativeLibrariesForSelfExtract=true `
-            -o ./dist
+      - name: Build EXE
+        # 改行なしの1行コマンド。パスは src/CardGame.csproj を指定
+        run: dotnet publish src/CardGame.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o ./publish
 
-      - name: Prepare Artifacts (ZIP)
-        # 配布用にEXEをZIP圧縮（ブラウザでのダウンロードエラーを防ぐため）
-        run: |
-          Compress-Archive -Path ./dist/*.exe -DestinationPath ./CardGame_Win-x64.zip
-
-      - name: Generate Checksum
-        # セキュリティのためファイルのハッシュ値を生成
-        run: |
-          Get-FileHash ./CardGame_Win-x64.zip | Format-List > checksum.txt
-
-      - name: Create GitHub Release
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          name: CardGame Release ${{ github.ref_name }}
-          # 前のタグからのコミット履歴を自動的にリリースノートにする
+          files: publish/*.exe
           generate_release_notes: true
-          files: |
-            CardGame_Win-x64.zip
-            checksum.txt
-          draft: false
-          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
