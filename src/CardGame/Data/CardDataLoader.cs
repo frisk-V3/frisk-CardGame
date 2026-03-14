@@ -1,53 +1,24 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Reflection;
 using System.Text.Json;
 using CardGame.Core;
 
-namespace CardGame.Data
-{
-    public static class CardDataLoader
-    {
-        // 埋め込みリソースのパス（プロジェクト名.フォルダ名.ファイル名）
-        private const string ResourcePath = "CardGame.Data.MasterData.json";
-
-        /// <summary>
-        /// EXE内に埋め込まれたJSONから100種類のカードリストを読み込む
-        /// </summary>
-        public static List<Card> LoadMasterData()
-        {
+namespace CardGame.Data {
+    public static class CardDataLoader {
+        public static List<Card> Load() {
             var assembly = Assembly.GetExecutingAssembly();
+            // LogicalNameで指定した名前で直接取得
+            using var stream = assembly.GetManifestResourceStream("MasterData.json");
             
-            // リソースストリームを開く
-            using (Stream? stream = assembly.GetManifestResourceStream(ResourcePath))
-            {
-                if (stream == null)
-                {
-                    throw new FileNotFoundException($"埋め込みリソースが見つかりません: {ResourcePath}");
-                }
-
-                using (StreamReader reader = new StreamReader(stream))
-                {
-                    string json = reader.ReadToEnd();
-                    
-                    // JSONオプション（大文字小文字を区別しないなど）
-                    var options = new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    };
-
-                    var cardList = JsonSerializer.Deserialize<List<Card>>(json, options);
-                    
-                    if (cardList == null)
-                    {
-                        return new List<Card>();
-                    }
-
-                    Console.WriteLine($"MasterData.json から {cardList.Count} 種類のカードをロードしました。");
-                    return cardList;
-                }
+            if (stream == null) {
+                // デバッグ用：リソースが見つからない場合に全リソース名を表示
+                var names = string.Join(", ", assembly.GetManifestResourceNames());
+                throw new Exception($"Resource not found. Available: {names}");
             }
+
+            using var reader = new StreamReader(stream);
+            var json = reader.ReadToEnd();
+            return JsonSerializer.Deserialize<List<Card>>(json, 
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
         }
     }
 }
