@@ -1,12 +1,15 @@
 name: Release-Build
+
 on:
   push:
-    tags: ["v*"] # v1.0.0 などのタグをプッシュすると発動
+    tags: ["v*"] # タグ(v1.0等)をプッシュした時だけ動く
+
 jobs:
-  build-and-release:
+  build-and-deploy:
     runs-on: windows-latest
     permissions:
-      contents: write
+      contents: write # これがないとRelease作成で落ちる
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -16,14 +19,16 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Build EXE
-        # 改行なしの1行コマンド。パスは src/CardGame.csproj を指定
-        run: dotnet publish src/CardGame.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o ./publish
+      - name: Publish EXE
+        # ポイント：パスを "src/CardGame.csproj" とクォートで囲み、
+        # 1行で全てのフラグを記述。
+        run: dotnet publish "src/CardGame.csproj" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o ./dist
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: publish/*.exe
+          # ポイント：パスの指定をシンプルに。
+          files: "dist/*.exe"
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
