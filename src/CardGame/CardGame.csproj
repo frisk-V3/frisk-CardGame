@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- 実行ファイル形式に設定 -->
+    <OutputType>Exe</OutputType>
+    <!-- 最新の .NET 8 を指定 -->
+    <TargetFramework>net8.0</TargetFramework>
+    <!-- C# の最新機能を使用 -->
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- EXEを1つにまとめるためのデフォルト設定（Actionsで上書きも可能） -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Dataフォルダ内のMasterData.jsonをEXEの中に埋め込む設定 -->
+    <!-- これにより、配布時にJSONファイルを別で送る必要がなくなります -->
+    <EmbeddedResource Include="Data/MasterData.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- JSON操作のために標準的なライブラリを追加 -->
+    <PackageReference Include="System.Text.Json" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>
