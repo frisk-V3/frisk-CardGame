@@ -1,0 +1,45 @@
+name: Build CardGame EXE
+
+on:
+  push:
+    branches: [ "main" ]  # mainブランチにプッシュされたら実行
+  workflow_dispatch:      # 手動実行も可能にする
+
+jobs:
+  build:
+    runs-on: windows-latest # Windows環境でビルド
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore src/CardGame/CardGame.csproj
+
+      - name: Publish EXE
+        # 仕様：
+        # -c Release: リリースモード
+        # -r win-x64: Windows 64bit用
+        # --self-contained true: .NET未インストールPCでも動作
+        # -p:PublishSingleFile=true: 全てを1つのEXEに集約
+        # -p:IncludeNativeLibrariesForSelfExtract=true: 抽出不要の完全1ファイル化
+        run: |
+          dotnet publish src/CardGame/CardGame.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -o ./publish
+
+      - name: Upload Artifact
+        # ビルドされたEXEをGitHub上の「Actions」タブからダウンロード可能にする
+        uses: actions/upload-artifact@v4
+        with:
+          name: CardGame-Release-Windows
+          path: ./publish/*.exe
